@@ -1,6 +1,5 @@
 <template>
   <div class="h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 overflow-hidden flex flex-col">
-    <!-- 自定义日期选择器 -->
     <div v-if="showDatePicker" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-96">
         <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
@@ -50,12 +49,8 @@
       </div>
     </div>
 
-    <!-- 顶部标题和时间选择 -->
     <div class="flex justify-between items-center mb-4 flex-shrink-0">
-      <h1 class="text-3xl font-bold">检测仪表盘</h1>
-      
-      <div class="inline-flex items-center space-x-2 p-1 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl">
-        <span class="text-xs text-slate-400">时间范围:</span>
+      <div class="inline-flex items-center space-x-2 p-1 bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-xl ml-auto"> <span class="text-xs text-slate-400">时间范围:</span>
         <select 
           v-model="displayTimeRange"
           @change="handleTimeRangeChange"
@@ -72,7 +67,6 @@
     </div>
 
     <div class="flex-grow min-h-0 overflow-y-auto space-y-4 custom-scrollbar">
-      <!-- 图表1 - 邮件处理趋势 -->
       <div :class="isMaximizedChart1 ? 'fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-3xl p-12' : 'bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4'">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -107,7 +101,6 @@
         <div v-else ref="chartContainer" :style="{ height: isMaximizedChart1 ? 'calc(100vh - 120px)' : '300px' }"></div>
       </div>
 
-      <!-- 图表2 - 拦截与告警趋势 -->
       <div :class="isMaximizedChart2 ? 'fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-3xl p-12' : 'bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4'">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -144,7 +137,6 @@
         <div v-else ref="actionChartContainer" :style="{ height: isMaximizedChart2 ? 'calc(100vh - 120px)' : '200px' }"></div>
       </div>
 
-      <!-- 汇总卡片 -->
       <div v-if="!isMaximizedChart1 && !isMaximizedChart2" class="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div v-for="card in summaryData" :key="card.title" 
              class="p-3 bg-slate-800/30 border border-slate-700 rounded-xl shadow-lg transition duration-300 hover:border-indigo-500/50">
@@ -156,7 +148,6 @@
         </div>
       </div>
 
-      <!-- 检测记录表格 -->
       <div v-if="!isMaximizedChart1 && !isMaximizedChart2" class="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-4">
         <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
           <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,8 +165,9 @@
                 <th class="py-2 px-3">邮件 ID</th>
                 <th class="py-2 px-3">发件人</th>
                 <th class="py-2 px-3">检测结果</th>
+                <th class="py-2 px-3 w-1/4">AI分析</th>
                 <th class="py-2 px-3">处理状态</th>
-              </tr>
+                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-800">
               <tr v-for="record in detectionRecords" :key="record.id" class="hover:bg-slate-800/30 transition">
@@ -185,13 +177,15 @@
                 <td class="py-2 px-3 text-xs">
                   <span :class="getResultClass(record.result)">{{ record.result }}</span>
                 </td>
+                <td class="py-2 px-3 text-xs text-slate-400 max-w-md truncate" :title="record.ai_reason">
+                  {{ record.ai_reason }}
+                </td>
                 <td class="py-2 px-3 text-xs">
                   <span :class="getStatusClass(record.status)">{{ record.status }}</span>
                 </td>
-              </tr>
+                 </tr>
               <tr v-if="!loading && detectionRecords.length === 0">
-                <td colspan="5" class="text-center py-4 text-slate-400">暂无检测记录</td>
-              </tr>
+                <td colspan="6" class="text-center py-4 text-slate-400">暂无检测记录</td> </tr>
             </tbody>
           </table>
         </div>
@@ -286,8 +280,11 @@ export default {
         return
       }
       
+      // 检查是否有实例，如果没有则初始化，否则直接 resize
       if (!chartInstance) {
         chartInstance = echarts.init(chartContainer.value, 'dark')
+      } else {
+        chartInstance.resize()
       }
 
       const option = {
@@ -330,7 +327,9 @@ export default {
             smooth: true,
             lineStyle: { color: '#818cf8', width: 3 },
             itemStyle: { color: '#818cf8' },
-            areaStyle: { color: 'rgba(129, 140, 248, 0.1)' }
+            areaStyle: { color: 'rgba(129, 140, 248, 0.1)' },
+            symbol: 'circle', // 增加点标记
+            symbolSize: 4
           },
           {
             name: '正常',
@@ -338,7 +337,9 @@ export default {
             data: trendData.normal,
             smooth: true,
             lineStyle: { color: '#34d399' },
-            itemStyle: { color: '#34d399' }
+            itemStyle: { color: '#34d399' },
+            symbol: 'circle',
+            symbolSize: 4
           },
           {
             name: '钓鱼',
@@ -346,7 +347,9 @@ export default {
             data: trendData.phishing,
             smooth: true,
             lineStyle: { color: '#f87171' },
-            itemStyle: { color: '#f87171' }
+            itemStyle: { color: '#f87171' },
+            symbol: 'circle',
+            symbolSize: 4
           },
           {
             name: '可疑',
@@ -354,7 +357,9 @@ export default {
             data: trendData.suspicious,
             smooth: true,
             lineStyle: { color: '#fbbf24' },
-            itemStyle: { color: '#fbbf24' }
+            itemStyle: { color: '#fbbf24' },
+            symbol: 'circle',
+            symbolSize: 4
           },
           {
             name: '人工',
@@ -362,7 +367,9 @@ export default {
             data: trendData.manual,
             smooth: true,
             lineStyle: { color: '#a78bfa' },
-            itemStyle: { color: '#a78bfa' }
+            itemStyle: { color: '#a78bfa' },
+            symbol: 'circle',
+            symbolSize: 4
           }
         ]
       }
@@ -380,6 +387,8 @@ export default {
       
       if (!actionChartInstance) {
         actionChartInstance = echarts.init(actionChartContainer.value, 'dark')
+      } else {
+        actionChartInstance.resize()
       }
 
       const option = {
@@ -445,6 +454,8 @@ export default {
 
     const handleCustomTimeConfirm = () => {
       if (startDate.value && endDate.value) {
+        // Vue 3 datetime-local input is YYYY-MM-DDTHH:MM
+        // Convert to milliseconds timestamp for backend
         const start = new Date(startDate.value).getTime()
         const end = new Date(endDate.value).getTime()
         timeRange.value = `${start}-${end}`
@@ -455,7 +466,10 @@ export default {
 
     const handleCustomTimeCancel = () => {
       showDatePicker.value = false
+      // 重置下拉框回 '12h'
       displayTimeRange.value = '12h'
+      timeRange.value = '12h'
+      fetchData()
     }
 
     const toggleMaximize = (chartIndex) => {
@@ -468,6 +482,7 @@ export default {
       }
 
       nextTick(() => {
+        // 在 DOM 重新布局后，强制图表重绘以适应新尺寸
         if (chartInstance) chartInstance.resize()
         if (actionChartInstance) actionChartInstance.resize()
       })
