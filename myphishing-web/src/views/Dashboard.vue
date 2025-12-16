@@ -220,6 +220,11 @@ export default {
     const detectionRecords = ref([])
     const isMaximizedChart1 = ref(false)
     const isMaximizedChart2 = ref(false)
+    
+    // 用于在 loading 状态下传递数据
+    let lastTrendData = null;
+    let lastActionData = null;
+
 
     // 图表容器
     const chartContainer = ref(null)
@@ -232,13 +237,13 @@ export default {
       if (window.echarts) {
         return window.echarts
       }
-      console.error('ECharts not loaded! Please add CDN to index.html')
+      console.error('ECharts not loaded! Please add CDN to index.html') 
       return null
     }
 
     // 数据获取
     const fetchData = async (customTimeRange) => {
-      loading.value = true
+      loading.value = true // 设为 true，图表容器被隐藏
       
       try {
         const range = customTimeRange || timeRange.value
@@ -257,22 +262,33 @@ export default {
             { title: '人工确认', value: data.summary.manualCount, icon: icons.user, color: 'text-purple-400' }
           ]
           
-          // 更新图表
-          await nextTick()
-          initChart(data.trendData)
-          initActionChart(data.actionTrendData)
+          // 存储数据
+          lastTrendData = data.trendData
+          lastActionData = data.actionTrendData
           
-          // 更新表格
+          // 更新表格 (使用 ai_reason，请确保后端匹配)
           detectionRecords.value = data.records
         }
       } catch (error) {
         console.error('获取数据失败:', error)
       } finally {
-        loading.value = false
+        // 1. 设置 loading 为 false，触发 v-else 容器渲染
+        loading.value = false 
+        
+        // 2. 在下一个 DOM 周期（容器已渲染）后初始化图表
+        await nextTick() 
+        
+        // 3. 此时 chartContainer.value 应该已经可用
+        if (lastTrendData) {
+            initChart(lastTrendData)
+        }
+        if (lastActionData) {
+            initActionChart(lastActionData)
+        }
       }
     }
 
-    // 初始化趋势图
+    // 初始化趋势图 (已修改：添加 dispose)
     const initChart = (trendData) => {
       const echarts = getEcharts()
       if (!chartContainer.value || !echarts) {
@@ -280,12 +296,15 @@ export default {
         return
       }
       
-      // 检查是否有实例，如果没有则初始化，否则直接 resize
-      if (!chartInstance) {
-        chartInstance = echarts.init(chartContainer.value, 'dark')
-      } else {
-        chartInstance.resize()
+      // 💥 关键修正：先销毁旧实例，再重新初始化
+      if (chartInstance) {
+          chartInstance.dispose();
+          chartInstance = null; 
       }
+      
+      // 重新初始化实例
+      chartInstance = echarts.init(chartContainer.value, 'dark')
+      chartInstance.resize()
 
       const option = {
         backgroundColor: 'transparent',
@@ -328,7 +347,7 @@ export default {
             lineStyle: { color: '#818cf8', width: 3 },
             itemStyle: { color: '#818cf8' },
             areaStyle: { color: 'rgba(129, 140, 248, 0.1)' },
-            symbol: 'circle', // 增加点标记
+            symbol: 'circle', 
             symbolSize: 4
           },
           {
@@ -377,7 +396,7 @@ export default {
       chartInstance.setOption(option)
     }
 
-    // 初始化动作图
+    // 初始化动作图 (已修改：添加 dispose)
     const initActionChart = (actionData) => {
       const echarts = getEcharts()
       if (!actionChartContainer.value || !echarts) {
@@ -385,11 +404,15 @@ export default {
         return
       }
       
-      if (!actionChartInstance) {
-        actionChartInstance = echarts.init(actionChartContainer.value, 'dark')
-      } else {
-        actionChartInstance.resize()
+      // 💥 关键修正：先销毁旧实例，再重新初始化
+      if (actionChartInstance) {
+          actionChartInstance.dispose();
+          actionChartInstance = null;
       }
+
+      // 重新初始化实例
+      actionChartInstance = echarts.init(actionChartContainer.value, 'dark')
+      actionChartInstance.resize()
 
       const option = {
         backgroundColor: 'transparent',
@@ -454,7 +477,6 @@ export default {
 
     const handleCustomTimeConfirm = () => {
       if (startDate.value && endDate.value) {
-        // Vue 3 datetime-local input is YYYY-MM-DDTHH:MM
         // Convert to milliseconds timestamp for backend
         const start = new Date(startDate.value).getTime()
         const end = new Date(endDate.value).getTime()
