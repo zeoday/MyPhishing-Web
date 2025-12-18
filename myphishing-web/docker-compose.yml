@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .  # 直接用当前目录的Dockerfile（无需关心路径）
+    container_name: myphishing-web
+    ports:
+      - "3000:3000"  # 前端访问端口：localhost:8080
+    restart: always
