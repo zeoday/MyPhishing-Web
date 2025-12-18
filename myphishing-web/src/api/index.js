@@ -40,3 +40,16 @@ export const vectorApi = {
     return request.post('/api/web/vectordata', params)
   }
 }
+
+// ========== AI分析接口（仅保留前端所需核心接口） ==========
+export const aiApi = {
+  /**
+   * AI邮件分析（适配前端展示的格式化数据）
+   * @param {Object} params - 分析参数
+   * @param {string} params.email_id - 邮件ID (可选，与email_text二选一)
+   * @param {string} params.email_text - 邮件文本内容 (可选，与email_id二选一)
+   */
+  analyzeEmail(params) {
+    return request.post('/api/web/aidata', params)
+  }
+}
