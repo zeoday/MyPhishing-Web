@@ -7,20 +7,36 @@ export const statsApi = {
    * @param {string} timeRange - 时间范围 (如 '12h', '7d', 或自定义时间戳范围 'start-end')
    */
   getDashboardStats(timeRange) {
-    // ----------------------------------------------------------------------
-    // 关键修改: 接受 timeRange 参数，并将其作为 URL 查询参数 (Query Parameter) 发送
-    // Axios 使用 params 选项来处理 GET 请求的查询参数。
-    // 最终生成的 URL 可能是: /api/web/dashboard?timeRange=12h
-    // ----------------------------------------------------------------------
     return request.get('/api/web/dashboard', { params: { timeRange } })
   }
 }
-
 
 // ========== 邮件管理接口 ==========
 export const emailApi = {
   // 获取邮件列表
   getEmailList(params) {
     return request.get('/api/web/emaildata', { params })
+  }
+}
+
+// ========== 向量检索接口 ==========
+export const vectorApi = {
+  /**
+   * 获取向量库统计信息
+   */
+  getVectorStats() {
+    return request.get('/api/web/vectordata')
+  },
+
+  /**
+   * 相似邮件检索
+   * @param {Object} params - 检索参数
+   * @param {string} params.email_id - 邮件ID (可选，与query_text二选一)
+   * @param {string} params.query_text - 检索文本 (可选，与email_id二选一)
+   * @param {number} params.top_k - 返回结果数量，默认10
+   * @param {number} params.threshold - 相似度阈值，默认0.7
+   */
+  searchSimilarEmails(params) {
+    return request.post('/api/web/vectordata', params)
   }
 }
