@@ -181,15 +181,9 @@ const fetchLicenseStatus = async () => {
 
 const activateLicense = async () => {
   try {
-    if (!machineId.value) {
-      alert('机器码未获取')
-      return
-    }
-
     activating.value = true
     await licenseApi.activateLicense({
-      license_key: licenseCode.value.trim(),
-      machine_id: machineId.value
+      license_code: licenseCode.value.trim()
     })
     licenseCode.value = ''
     await fetchLicenseStatus()
@@ -200,8 +194,6 @@ const activateLicense = async () => {
     activating.value = false
   }
 }
-
-
 
 const copyMachineId = async () => {
   if (!machineId.value) return
