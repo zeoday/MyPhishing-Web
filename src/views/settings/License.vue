@@ -160,14 +160,22 @@ const fetchMachineId = async () => {
   }
 }
 
+
+
 const fetchLicenseStatus = async () => {
   try {
     loading.value = true
+
+    // ⚠️ 这里拿到的已经是 response.data
     const res = await licenseApi.getLicenseStatus()
+
+    // res = { data: {...}, message: 'success' }
     licenseStatus.value = {
       is_licensed: false,
       ...res.data
     }
+
+    loadError.value = ''
   } catch (err) {
     loadError.value = err?.message || '授权服务不可用'
     licenseStatus.value = {
@@ -178,6 +186,7 @@ const fetchLicenseStatus = async () => {
     loading.value = false
   }
 }
+
 
 const activateLicense = async () => {
   try {
