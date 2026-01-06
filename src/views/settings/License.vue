@@ -153,7 +153,7 @@ const remainingColor = computed(() => {
 const fetchMachineId = async () => {
   try {
     const res = await licenseApi.getMachineId()
-    machineId.value = res.data.machine_id
+    machineId.value = res.machine_id
   } catch {
     machineId.value = ''
     loadError.value = '获取机器码失败'
