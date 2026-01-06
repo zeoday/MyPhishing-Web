@@ -152,21 +152,11 @@ const remainingColor = computed(() => {
 /* ========= methods ========= */
 const fetchMachineId = async () => {
   try {
-    const res = await licenseApi.getMachineId()
-    // 🔴 关键修复：先打印响应，确认实际结构（开发环境调试用，调试完可删除）
-    console.log('机器码接口响应：', res)
-    
-    // 情况1：如果 request 工具已解析 res.data，直接取 res.data.machine_id
-    machineId.value = res.data.machine_id 
-    // 情况2：如果 request 工具未解析，保留原逻辑（二选一，根据实际打印结果调整）
-    // machineId.value = res.data.data.machine_id
-    
-    loadError.value = '' // 成功获取后清空错误提示
-  } catch (err) {
-    // 🔴 优化：打印错误信息，便于排查
-    console.error('获取机器码失败详情：', err)
-    machineId.value = ''
-    loadError.value = '获取机器码失败：' + (err?.message || '未知错误')
+    const data = await licenseApi.getMachineId()
+    machineId.value = data.machine_id
+    loadError.value = ''
+  } catch (e) {
+    loadError.value = '获取机器码失败'
   }
 }
 
