@@ -76,3 +76,33 @@ export const settingApi = {
     return request.post('/api/web/setting', { action: 'reset' })
   }
 }
+
+
+// ========== 授权管理接口 ==========
+export const licenseApi = {
+  /**
+   * 获取机器码
+   * GET /api/utils/machine-id
+   */
+  getMachineId() {
+    return request.get('/api/utils/machine-id')
+  },
+
+  /**
+   * 获取授权状态
+   * GET /api/license/status
+   */
+  getLicenseStatus() {
+    return request.get('/api/utils/status')
+  },
+
+  /**
+   * 激活授权
+   * POST /api/license/activate
+   * @param {Object} params
+   * @param {string} params.license_key - 授权码
+   */
+  activateLicense(params) {
+    return request.post('/api/utils/activate', params)
+  }
+}
