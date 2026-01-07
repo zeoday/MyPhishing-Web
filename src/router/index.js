@@ -40,11 +40,22 @@ const routes = [
         name: 'Reports',
         component: () => import('@/views/Reports.vue')
       },
-      // 关键：添加系统设置路由到 children 数组中
+      // 系统设置 - 改为重定向到第一个子页面
       {
         path: 'settings',
-        name: 'Settings',
-        component: () => import('@/views/Settings.vue') // 懒加载方式，和其他路由保持一致
+        redirect: '/settings/alert'
+      },
+      // 系统设置 - 告警拦截配置
+      {
+        path: 'settings/alert',
+        name: 'SettingsAlert',
+        component: () => import('@/views/settings/Alert.vue')
+      },
+      // 系统设置 - 授权管理
+      {
+        path: 'settings/license',
+        name: 'SettingsLicense',
+        component: () => import('@/views/settings/License.vue')
       }
     ]
   }

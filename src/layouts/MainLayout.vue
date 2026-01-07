@@ -53,52 +53,86 @@
     <!-- 侧边栏 -->
     <aside 
       :class="[
-        'fixed left-0 top-16 bottom-0 backdrop-blur-xl border-r border-slate-800 transition-transform duration-300 z-40',
+        'fixed left-0 top-16 bottom-0 backdrop-blur-xl border-r border-slate-800 transition-transform duration-300 z-40 overflow-y-auto',
         'md:w-64 w-full',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       ]"
     >
       <div class="p-4 space-y-2">
-        <router-link
-          v-for="item in navigationItems"
-          :key="item.id"
-          :to="item.path"
-          custom
-          v-slot="{ isActive, navigate }"
-        >
-          <button
-            @click="navigate"
-            :class="[
-              'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
-              isActive 
-                ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' 
-                : 'hover:bg-slate-800/50 border border-transparent'
-            ]"
+        <!-- 一级菜单 -->
+        <template v-for="item in navigationItems" :key="item.id">
+          <!-- 没有子菜单的普通菜单项 -->
+          <router-link
+            v-if="!item.children"
+            :to="item.path"
+            custom
+            v-slot="{ isActive, navigate }"
           >
-            <component :is="item.icon" :class="['w-5 h-5', item.color]" />
-            <span class="font-medium">{{ item.label }}</span>
-          </button>
-        </router-link>
-        
-        <!-- 系统设置菜单 -->
-        <router-link
-          to="/settings"
-          custom
-          v-slot="{ isActive, navigate }"
-        >
-          <button
-            @click="navigate"
-            :class="[
-              'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
-              isActive 
-                ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' 
-                : 'hover:bg-slate-800/50 border border-transparent'
-            ]"
-          >
-            <Settings :class="['w-5 h-5', 'text-amber-400']" />
-            <span class="font-medium">系统设置</span>
-          </button>
-        </router-link>
+            <button
+              @click="navigate"
+              :class="[
+                'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
+                isActive 
+                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' 
+                  : 'hover:bg-slate-800/50 border border-transparent'
+              ]"
+            >
+              <component :is="item.icon" :class="['w-5 h-5', item.color]" />
+              <span class="font-medium">{{ item.label }}</span>
+            </button>
+          </router-link>
+
+          <!-- 有子菜单的菜单项 -->
+          <div v-else>
+            <!-- 父级菜单按钮 -->
+            <button
+              @click="toggleSubmenu(item.id)"
+              :class="[
+                'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all',
+                isSubmenuActive(item) 
+                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30' 
+                  : 'hover:bg-slate-800/50 border border-transparent'
+              ]"
+            >
+              <div class="flex items-center gap-3">
+                <component :is="item.icon" :class="['w-5 h-5', item.color]" />
+                <span class="font-medium">{{ item.label }}</span>
+              </div>
+              <ChevronDown 
+                :class="[
+                  'w-4 h-4 transition-transform',
+                  openSubmenus.includes(item.id) ? 'rotate-180' : ''
+                ]"
+              />
+            </button>
+
+            <!-- 子菜单 -->
+            <transition name="submenu">
+              <div v-if="openSubmenus.includes(item.id)" class="mt-1 ml-4 space-y-1">
+                <router-link
+                  v-for="child in item.children"
+                  :key="child.id"
+                  :to="child.path"
+                  custom
+                  v-slot="{ isActive, navigate }"
+                >
+                  <button
+                    @click="navigate"
+                    :class="[
+                      'w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm',
+                      isActive 
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' 
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent'
+                    ]"
+                  >
+                    <component :is="child.icon" class="w-4 h-4" />
+                    <span>{{ child.label }}</span>
+                  </button>
+                </router-link>
+              </div>
+            </transition>
+          </div>
+        </template>
       </div>
     </aside>
 
@@ -127,11 +161,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Menu, X, Shield, Search, Bell, User, BarChart3, Mail, Database, Brain, FileText, Settings } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { Menu, X, Shield, Search, Bell, User, BarChart3, Mail, Database, Brain, FileText, Settings, AlertCircle, Key, ChevronDown } from 'lucide-vue-next'
 
+const route = useRoute()
 const sidebarOpen = ref(false)
 const searchQuery = ref('')
+const openSubmenus = ref([]) // 展开的子菜单ID列表
 
 const navigationItems = [
   { id: 'dashboard', path: '/dashboard', icon: BarChart3, label: '数据面板', color: 'text-blue-400' },
@@ -139,8 +176,47 @@ const navigationItems = [
   { id: 'threats', path: '/threats', icon: Shield, label: '威胁检测', color: 'text-red-400' },
   { id: 'vector', path: '/vector', icon: Database, label: '向量检索', color: 'text-green-400' },
   { id: 'ai', path: '/ai', icon: Brain, label: 'AI分析', color: 'text-cyan-400' },
-  { id: 'reports', path: '/reports', icon: FileText, label: '报告中心', color: 'text-indigo-400' }
+  { id: 'reports', path: '/reports', icon: FileText, label: '报告中心', color: 'text-indigo-400' },
+  // 系统设置 - 带子菜单
+  { 
+    id: 'settings', 
+    icon: Settings, 
+    label: '系统设置', 
+    color: 'text-amber-400',
+    children: [
+      { id: 'alert', path: '/settings/alert', icon: AlertCircle, label: '告警拦截配置' },
+      { id: 'license', path: '/settings/license', icon: Key, label: '授权管理' }
+    ]
+  }
 ]
+
+// 切换子菜单展开/收起
+const toggleSubmenu = (menuId) => {
+  const index = openSubmenus.value.indexOf(menuId)
+  if (index > -1) {
+    openSubmenus.value.splice(index, 1)
+  } else {
+    openSubmenus.value.push(menuId)
+  }
+}
+
+// 判断父级菜单是否激活（任意子菜单激活则父级也高亮）
+const isSubmenuActive = (item) => {
+  if (!item.children) return false
+  return item.children.some(child => route.path === child.path)
+}
+
+// 监听路由变化，自动展开对应的父级菜单
+watch(() => route.path, (newPath) => {
+  navigationItems.forEach(item => {
+    if (item.children) {
+      const hasActiveChild = item.children.some(child => newPath === child.path)
+      if (hasActiveChild && !openSubmenus.value.includes(item.id)) {
+        openSubmenus.value.push(item.id)
+      }
+    }
+  })
+}, { immediate: true })
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
@@ -148,20 +224,16 @@ const handleSearch = () => {
   }
 }
 
-// 监听窗口大小变化，实现响应式侧边栏切换
 const handleResize = () => {
-  // md 断点（768px）：桌面端默认打开侧边栏，移动端默认隐藏
   const isDesktop = window.innerWidth >= 768
   sidebarOpen.value = isDesktop
 }
 
-// 组件挂载时初始化并添加监听
 onMounted(() => {
   handleResize()
   window.addEventListener('resize', handleResize)
 })
 
-// 组件卸载时移除监听，防止内存泄漏
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
@@ -176,5 +248,44 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 子菜单展开/收起动画 */
+.submenu-enter-active,
+.submenu-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.submenu-enter-from,
+.submenu-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-10px);
+}
+
+.submenu-enter-to,
+.submenu-leave-from {
+  opacity: 1;
+  max-height: 500px;
+  transform: translateY(0);
+}
+
+/* 滚动条样式 */
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 </style>
