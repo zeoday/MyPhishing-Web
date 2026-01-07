@@ -43,18 +43,25 @@
             v-if="licenseStatus.is_licensed"
             class="space-y-3 pt-4 border-t border-slate-700"
           >
-            <InfoRow label="生效时间" :value="licenseStatus.start_time || '-'" />
-            <InfoRow label="到期时间" :value="licenseStatus.end_time || '-'" />
-            <InfoRow
-              label="剩余天数"
-              :value="(licenseStatus.remaining_days || 0) + ' 天'"
-              :valueClass="remainingColor"
-            />
-            <InfoRow
-              v-if="licenseStatus.activated_at"
-              label="激活时间"
-              :value="licenseStatus.activated_at"
-            />
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">生效时间</span>
+              <span class="font-medium text-white">{{ licenseStatus.start_time || '-' }}</span>
+            </div>
+            
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">到期时间</span>
+              <span class="font-medium text-white">{{ licenseStatus.end_time || '-' }}</span>
+            </div>
+            
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">剩余天数</span>
+              <span :class="['font-medium', remainingColor]">{{ licenseStatus.remaining_days || 0 }} 天</span>
+            </div>
+            
+            <div v-if="licenseStatus.activated_at" class="flex justify-between text-sm">
+              <span class="text-slate-400">激活时间</span>
+              <span class="font-medium text-white">{{ licenseStatus.activated_at }}</span>
+            </div>
 
             <div
               v-if="licenseStatus.remaining_days && licenseStatus.remaining_days <= 7"
@@ -68,12 +75,6 @@
           <div v-else class="pt-4 border-t border-slate-700 text-slate-400 text-sm">
             {{ licenseStatus.message || '当前系统尚未授权' }}
           </div>
-
-          <!-- 调试信息（可选，正式环境删除） -->
-          <details class="pt-4 border-t border-slate-700">
-            <summary class="text-xs text-slate-500 cursor-pointer">调试信息</summary>
-            <pre class="mt-2 text-xs bg-slate-800 p-2 rounded overflow-auto">{{ JSON.stringify(licenseStatus, null, 2) }}</pre>
-          </details>
         </div>
       </div>
 
@@ -133,21 +134,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { Shield, Key, Copy } from 'lucide-vue-next'
 import { licenseApi } from '@/api'
-
-// ========= InfoRow 组件定义 =========
-const InfoRow = {
-  props: {
-    label: String,
-    value: String,
-    valueClass: String
-  },
-  template: `
-    <div class="flex justify-between text-sm">
-      <span class="text-slate-400">{{ label }}</span>
-      <span :class="['font-medium text-white', valueClass]">{{ value }}</span>
-    </div>
-  `
-}
 
 // ========= 状态 =========
 const loading = ref(false)
