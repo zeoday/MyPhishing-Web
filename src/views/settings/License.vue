@@ -43,11 +43,11 @@
             v-if="licenseStatus.is_licensed"
             class="space-y-3 pt-4 border-t border-slate-700"
           >
-            <InfoRow label="生效时间" :value="licenseStatus.start_time" />
-            <InfoRow label="到期时间" :value="licenseStatus.end_time" />
+            <InfoRow label="生效时间" :value="licenseStatus.start_time || '-'" />
+            <InfoRow label="到期时间" :value="licenseStatus.end_time || '-'" />
             <InfoRow
               label="剩余天数"
-              :value="licenseStatus.remaining_days + ' 天'"
+              :value="(licenseStatus.remaining_days || 0) + ' 天'"
               :valueClass="remainingColor"
             />
             <InfoRow
@@ -57,7 +57,7 @@
             />
 
             <div
-              v-if="licenseStatus.remaining_days <= 7"
+              v-if="licenseStatus.remaining_days && licenseStatus.remaining_days <= 7"
               class="mt-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-yellow-300 text-sm"
             >
               ⚠️ 授权即将过期，请及时续期
@@ -68,6 +68,12 @@
           <div v-else class="pt-4 border-t border-slate-700 text-slate-400 text-sm">
             {{ licenseStatus.message || '当前系统尚未授权' }}
           </div>
+
+          <!-- 调试信息（可选，正式环境删除） -->
+          <details class="pt-4 border-t border-slate-700">
+            <summary class="text-xs text-slate-500 cursor-pointer">调试信息</summary>
+            <pre class="mt-2 text-xs bg-slate-800 p-2 rounded overflow-auto">{{ JSON.stringify(licenseStatus, null, 2) }}</pre>
+          </details>
         </div>
       </div>
 
@@ -90,7 +96,7 @@
               />
               <button
                 @click="copyMachineId"
-                class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2 rounded-lg"
+                class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <Copy class="w-4 h-4" />
               </button>
@@ -104,7 +110,7 @@
               v-model="licenseCode"
               rows="4"
               placeholder="请粘贴授权码..."
-              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-mono text-sm"
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white font-mono text-sm resize-none"
             />
           </div>
 
@@ -112,7 +118,7 @@
           <button
             @click="activateLicense"
             :disabled="!licenseCode.trim() || activating"
-            class="w-full bg-amber-600 hover:bg-amber-500 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-60"
+            class="w-full bg-amber-600 hover:bg-amber-500 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
           >
             <span v-if="activating">激活中...</span>
             <span v-else>激活 / 重新授权</span>
@@ -128,7 +134,22 @@ import { ref, computed, onMounted } from 'vue'
 import { Shield, Key, Copy } from 'lucide-vue-next'
 import { licenseApi } from '@/api'
 
-/* ========= state ========= */
+// ========= InfoRow 组件定义 =========
+const InfoRow = {
+  props: {
+    label: String,
+    value: String,
+    valueClass: String
+  },
+  template: `
+    <div class="flex justify-between text-sm">
+      <span class="text-slate-400">{{ label }}</span>
+      <span :class="['font-medium text-white', valueClass]">{{ value }}</span>
+    </div>
+  `
+}
+
+// ========= 状态 =========
 const loading = ref(false)
 const activating = ref(false)
 const loadError = ref('')
@@ -138,10 +159,15 @@ const licenseCode = ref('')
 
 const licenseStatus = ref({
   is_licensed: false,
-  message: '未授权'
+  message: '未授权',
+  start_time: '',
+  end_time: '',
+  remaining_days: 0,
+  activated_at: '',
+  status: ''
 })
 
-/* ========= computed ========= */
+// ========= 计算属性 =========
 const remainingColor = computed(() => {
   const d = licenseStatus.value.remaining_days || 0
   if (d > 30) return 'text-green-400'
@@ -149,48 +175,61 @@ const remainingColor = computed(() => {
   return 'text-red-400'
 })
 
-/* ========= methods ========= */
+// ========= 方法 =========
 const fetchMachineId = async () => {
   try {
     const data = await licenseApi.getMachineId()
     machineId.value = data.machine_id
     loadError.value = ''
   } catch (e) {
+    console.error('获取机器码失败:', e)
     loadError.value = '获取机器码失败'
   }
 }
 
-
-
 const fetchLicenseStatus = async () => {
   try {
     loading.value = true
-
     const res = await licenseApi.getLicenseStatus()
     
     // 根据实际返回结构处理数据
+    // 如果 res 是 { code: 200, data: {...} }，使用 res.data
+    // 如果拦截器已经提取了 data，直接使用 res
     const statusData = res.data || res
+    
+    console.log('原始响应:', res)
+    console.log('提取的数据:', statusData)
     
     // 确保 is_licensed 是布尔值
     licenseStatus.value = {
+      message: '未授权',
+      start_time: '',
+      end_time: '',
+      remaining_days: 0,
+      activated_at: '',
+      status: '',
       ...statusData,
       is_licensed: Boolean(statusData.is_licensed)
     }
-
-    console.log('授权状态:', licenseStatus.value)
+    
+    console.log('最终状态:', licenseStatus.value)
     loadError.value = ''
   } catch (err) {
     console.error('获取授权状态失败:', err)
     loadError.value = err?.message || '授权服务不可用'
     licenseStatus.value = {
       is_licensed: false,
-      message: '未授权'
+      message: '未授权',
+      start_time: '',
+      end_time: '',
+      remaining_days: 0,
+      activated_at: '',
+      status: ''
     }
   } finally {
     loading.value = false
   }
 }
-
 
 const activateLicense = async () => {
   try {
@@ -202,6 +241,7 @@ const activateLicense = async () => {
     await fetchLicenseStatus()
     alert('授权激活成功')
   } catch (err) {
+    console.error('激活失败:', err)
     alert(err?.message || '激活失败')
   } finally {
     activating.value = false
@@ -210,29 +250,18 @@ const activateLicense = async () => {
 
 const copyMachineId = async () => {
   if (!machineId.value) return
-  await navigator.clipboard.writeText(machineId.value)
+  try {
+    await navigator.clipboard.writeText(machineId.value)
+    alert('机器码已复制到剪贴板')
+  } catch (e) {
+    console.error('复制失败:', e)
+    alert('复制失败，请手动复制')
+  }
 }
 
-/* ========= init ========= */
+// ========= 生命周期 =========
 onMounted(() => {
   fetchMachineId()
   fetchLicenseStatus()
 })
-</script>
-
-<!-- 行组件 -->
-<script>
-export default {
-  components: {
-    InfoRow: {
-      props: ['label', 'value', 'valueClass'],
-      template: `
-        <div class="flex justify-between text-sm">
-          <span class="text-slate-400">{{ label }}</span>
-          <span :class="['font-medium', valueClass]">{{ value }}</span>
-        </div>
-      `
-    }
-  }
-}
 </script>
