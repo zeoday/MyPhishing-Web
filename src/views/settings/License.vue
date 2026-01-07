@@ -166,17 +166,21 @@ const fetchLicenseStatus = async () => {
   try {
     loading.value = true
 
-    // ⚠️ 这里拿到的已经是 response.data
     const res = await licenseApi.getLicenseStatus()
-
-    // res = { data: {...}, message: 'success' }
+    
+    // 根据实际返回结构处理数据
+    // 如果 res 是 { code: 200, data: {...} },使用 res.data
+    // 如果拦截器已经提取了 data,直接使用 res
+    const statusData = res.data || res
+    
     licenseStatus.value = {
       is_licensed: false,
-      ...res.data
+      ...statusData
     }
 
     loadError.value = ''
   } catch (err) {
+    console.error('获取授权状态失败:', err)
     loadError.value = err?.message || '授权服务不可用'
     licenseStatus.value = {
       is_licensed: false,
