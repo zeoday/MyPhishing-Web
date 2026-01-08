@@ -56,3 +56,25 @@ export const licenseApi = {
     return request.post('/utils/activate', params)
   }
 }
+
+
+// ========== 日志分析接口 ==========
+export const logApi = {
+  // 获取历史日志（带分页和过滤）
+  getHistory(params) {
+    return request.get('/logs/history', { params })
+  },
+  // 获取统计概览
+  getStats() {
+    return request.get('/logs/stats')
+  },
+  // 获取实时日志流地址 (供 EventSource 使用)
+  getStreamUrl(service = 'all', level = 'all') {
+    const baseUrl = import.meta.env.VITE_API_URL || ''
+    return `${baseUrl}/logs/stream?service=${service}&level=${level}`
+  },
+  // 下载日志文件
+  downloadLog(type) {
+    window.open(`${import.meta.env.VITE_API_URL || ''}/logs/download?type=${type}`)
+  }
+}

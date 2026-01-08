@@ -56,6 +56,12 @@ const routes = [
         path: 'settings/license',
         name: 'SettingsLicense',
         component: () => import('@/views/settings/License.vue')
+      },
+      // 系统设置 - 日志分析
+      {
+        path: 'settings/logs',
+        name: 'SettingsLogs',
+        component: () => import('@/views/settings/Logs.vue')
       }
     ]
   }
