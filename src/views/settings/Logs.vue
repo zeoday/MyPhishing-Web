@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-200 overflow-hidden font-sans">
+  <div class="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-200 font-sans">
     <!-- 头部固定层 - 最高优先级 -->
-    <header class="relative z-[100] h-16 border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
+    <header class="sticky top-0 z-[200] h-16 border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
       <div class="flex items-center gap-8">
         <div class="flex items-center gap-3">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -27,13 +27,13 @@
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-1 bg-slate-800/50 border border-slate-700/50 rounded-lg p-1">
           <button
-            @click="mode = 'live'; handleModeChange()"
+            @click="switchMode('live')"
             :class="['px-4 py-1.5 rounded-md text-xs font-bold transition-all uppercase tracking-tighter', mode === 'live' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300']"
           >
             LIVE 流模式
           </button>
           <button
-            @click="mode = 'history'; handleModeChange()"
+            @click="switchMode('history')"
             :class="['px-4 py-1.5 rounded-md text-xs font-bold transition-all uppercase tracking-tighter', mode === 'history' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-slate-300']"
           >
             HISTORY 历史
@@ -54,7 +54,7 @@
           <transition name="dropdown">
             <div 
               v-if="showDownloadMenu" 
-              class="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[110] backdrop-blur-xl"
+              class="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[210] backdrop-blur-xl"
             >
               <div class="px-4 py-2 border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-widest">选择导出类型</div>
               <button
@@ -78,7 +78,7 @@
     </header>
 
     <!-- 过滤器栏 - 次高优先级 -->
-    <div class="relative z-[90] bg-slate-900/50 backdrop-blur-md p-4 border-b border-slate-800/50 flex flex-wrap items-center gap-4 px-6">
+    <div class="sticky top-16 z-[190] bg-slate-900/50 backdrop-blur-md p-4 border-b border-slate-800/50 flex flex-wrap items-center gap-4 px-6">
       <div class="flex flex-col gap-1">
         <span class="text-[10px] font-bold text-slate-500 uppercase ml-1">所属服务</span>
         <select 
@@ -142,10 +142,16 @@
       </div>
 
       <div class="flex items-center gap-3 ml-auto pt-5">
-        <label v-if="mode === 'live'" class="flex items-center gap-2 text-[11px] text-slate-500 font-bold cursor-pointer hover:text-slate-300 transition-colors">
-          <input type="checkbox" v-model="autoScroll" class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0" />
-          自动滚动
-        </label>
+        <div v-if="mode === 'live'" class="flex items-center gap-3">
+          <div :class="['flex items-center gap-2 px-2 py-1 rounded text-[10px] font-bold', sseConnected ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10']">
+            <div :class="['w-2 h-2 rounded-full', sseConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500']"></div>
+            {{ sseConnected ? 'SSE 已连接' : 'SSE 断开' }}
+          </div>
+          <label class="flex items-center gap-2 text-[11px] text-slate-500 font-bold cursor-pointer hover:text-slate-300 transition-colors">
+            <input type="checkbox" v-model="autoScroll" class="w-3.5 h-3.5 rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0" />
+            自动滚动
+          </label>
+        </div>
         <button 
           @click="handleRefresh" 
           class="p-2 text-slate-400 hover:text-blue-400 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition-all"
@@ -165,7 +171,7 @@
     </div>
 
     <!-- 主内容区域 - 受限滚动 -->
-    <main class="relative flex-1 bg-[#05070a] overflow-hidden">
+    <main class="flex-1 bg-[#05070a] relative min-h-0">
       <!-- 加载提示 -->
       <div v-if="loading" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-[2px]">
         <div class="flex flex-col items-center gap-4">
@@ -214,7 +220,7 @@
       </div>
       
       <!-- 空状态提示 -->
-      <div v-if="!loading && displayLogs.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-800 pointer-events-none">
+      <div v-if="!loading && displayLogs.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-800 pointer-events-none z-10">
         <div class="relative mb-6">
           <svg class="w-24 h-24 opacity-[0.03]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -224,8 +230,16 @@
           </svg>
         </div>
         <p class="text-sm font-bold uppercase tracking-[0.2em] opacity-40">No Log Records Found</p>
-        <p class="text-xs opacity-20 mt-2">请尝试调整过滤器设置或检查系统推送服务</p>
+        <p class="text-xs opacity-20 mt-2">{{ mode === 'live' ? '等待日志推送...' : '请尝试调整过滤器设置' }}</p>
         <button 
+          v-if="mode === 'live' && !sseConnected"
+          @click="reconnectSSE"
+          class="mt-6 px-6 py-2 bg-blue-600/10 border border-blue-600/20 text-blue-400 rounded-lg text-xs font-bold hover:bg-blue-600/20 transition-all pointer-events-auto"
+        >
+          重新连接 SSE
+        </button>
+        <button 
+          v-else-if="mode === 'history'"
           @click="handleRefresh"
           class="mt-6 px-6 py-2 bg-blue-600/10 border border-blue-600/20 text-blue-400 rounded-lg text-xs font-bold hover:bg-blue-600/20 transition-all pointer-events-auto"
         >
@@ -235,7 +249,7 @@
     </main>
 
     <!-- 底部分页 -->
-    <footer v-if="mode === 'history'" class="relative z-[80] h-14 border-t border-slate-800/50 bg-slate-900/95 flex items-center px-8 justify-between shrink-0">
+    <footer v-if="mode === 'history'" class="sticky bottom-0 z-[180] h-14 border-t border-slate-800/50 bg-slate-900/95 flex items-center px-8 justify-between shrink-0">
       <div class="flex items-center gap-4">
         <div class="text-[11px] text-slate-500 uppercase font-bold tracking-widest">
           查询结果: <span class="text-blue-400 ml-1">{{ total }}</span>
@@ -246,7 +260,7 @@
         <button
           @click="page > 1 && (page--, loadHistory())"
           :disabled="page <= 1"
-          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700"
+          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition-all"
         >
           上一页
         </button>
@@ -265,7 +279,7 @@
         <button
           @click="page < totalPages && (page++, loadHistory())"
           :disabled="page >= totalPages"
-          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700"
+          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition-all"
         >
           下一页
         </button>
@@ -278,11 +292,11 @@
             @keyup.enter="handleJumpPage"
             min="1"
             :max="totalPages"
-            class="w-16 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-center"
+            class="w-16 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-center focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           />
           <button
             @click="handleJumpPage"
-            class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs hover:bg-slate-700"
+            class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs hover:bg-slate-700 transition-all"
           >
             GO
           </button>
@@ -313,6 +327,7 @@ const pageSize = ref(100)
 const scrollContainer = ref(null)
 const dropdownContainer = ref(null)
 const jumpPage = ref(1)
+const sseConnected = ref(false)
 
 // 下拉菜单控制
 const showDownloadMenu = ref(false)
@@ -329,6 +344,8 @@ const filters = reactive({
 
 let es = null
 let statsTimer = null
+let reconnectTimer = null
+let heartbeatTimer = null
 
 /**
  * 格式化日志列表数据
@@ -359,22 +376,18 @@ const visiblePages = computed(() => {
   } else {
     if (current <= 4) {
       for (let i = 1; i <= 5; i++) pages.push(i)
-      pages.push('...')
       pages.push(total)
     } else if (current >= total - 3) {
       pages.push(1)
-      pages.push('...')
       for (let i = total - 4; i <= total; i++) pages.push(i)
     } else {
       pages.push(1)
-      pages.push('...')
       for (let i = current - 1; i <= current + 1; i++) pages.push(i)
-      pages.push('...')
       pages.push(total)
     }
   }
   
-  return pages.filter(p => p !== '...')
+  return pages
 })
 
 /**
@@ -434,35 +447,115 @@ const toggleDownloadMenu = () => {
 }
 
 /**
- * 初始化 SSE 实时流
+ * 清理SSE连接
+ */
+const cleanupSSE = () => {
+  if (es) {
+    es.close()
+    es = null
+  }
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  if (heartbeatTimer) {
+    clearTimeout(heartbeatTimer)
+    heartbeatTimer = null
+  }
+  sseConnected.value = false
+}
+
+/**
+ * 初始化 SSE 实时流 - 修复版
  */
 const initSSE = () => {
-  if (es) es.close()
+  cleanupSSE()
+  
   const params = new URLSearchParams()
   if (filters.service !== 'all') params.append('service', filters.service)
   if (filters.level !== 'all') params.append('level', filters.level)
   
-  es = new EventSource(`${API_BASE}/stream?${params.toString()}`)
+  const url = `${API_BASE}/stream?${params.toString()}`
+  console.log('[SSE] 连接到:', url)
   
+  es = new EventSource(url)
+  
+  // 连接成功
+  es.onopen = () => {
+    console.log('[SSE] 连接成功')
+    sseConnected.value = true
+    
+    // 重置心跳计时器
+    if (heartbeatTimer) clearTimeout(heartbeatTimer)
+    heartbeatTimer = setTimeout(() => {
+      console.warn('[SSE] 30秒未收到心跳，标记为断开')
+      sseConnected.value = false
+    }, 30000)
+  }
+  
+  // 接收消息
   es.onmessage = (e) => {
-    if (e.data.includes('heartbeat')) return
+    // 重置心跳计时器
+    if (heartbeatTimer) clearTimeout(heartbeatTimer)
+    heartbeatTimer = setTimeout(() => {
+      console.warn('[SSE] 30秒未收到心跳，标记为断开')
+      sseConnected.value = false
+    }, 30000)
+    
+    // 心跳包
+    if (e.data.includes('heartbeat') || e.data.trim() === '') {
+      console.log('[SSE] 收到心跳')
+      return
+    }
+    
+    // 解析日志数据
     try {
       const data = JSON.parse(e.data)
       if (data.error) {
-        console.error('SSE Error:', data.error)
+        console.error('[SSE] 服务器错误:', data.error)
         return
       }
+      
+      console.log('[SSE] 收到日志:', data)
       logs.value.push(data)
-      if (logs.value.length > 2500) logs.value.splice(0, 500)
-      if (autoScroll.value) nextTick(scrollToBottom)
+      
+      // 保持缓冲区大小
+      if (logs.value.length > 2500) {
+        logs.value.splice(0, 500)
+      }
+      
+      // 自动滚动
+      if (autoScroll.value) {
+        nextTick(scrollToBottom)
+      }
     } catch (err) {
-      console.error('SSE JSON 解析错误:', err, e.data)
+      console.error('[SSE] JSON 解析错误:', err, e.data)
     }
   }
 
+  // 连接错误
   es.onerror = (err) => {
-    console.warn('SSE 连接错误:', err)
+    console.error('[SSE] 连接错误:', err)
+    sseConnected.value = false
+    cleanupSSE()
+    
+    // 自动重连（5秒后）
+    reconnectTimer = setTimeout(() => {
+      if (mode.value === 'live') {
+        console.log('[SSE] 尝试重新连接...')
+        initSSE()
+      }
+    }, 5000)
   }
+}
+
+/**
+ * 手动重连SSE
+ */
+const reconnectSSE = () => {
+  console.log('[SSE] 手动重连')
+  logs.value = []
+  initSSE()
 }
 
 /**
@@ -495,6 +588,7 @@ const loadHistory = async () => {
       }
     }
 
+    console.log('[History] 加载历史数据:', p.toString())
     const res = await fetch(`${API_BASE}/history?${p.toString()}`)
     const json = await res.json()
     
@@ -502,13 +596,14 @@ const loadHistory = async () => {
       historyLogs.value = json.data.logs || []
       total.value = json.data.total || 0
       jumpPage.value = page.value
+      console.log('[History] 加载成功，共', total.value, '条记录')
     } else {
-      console.error('历史记录加载失败:', json.error)
+      console.error('[History] 加载失败:', json.error)
       historyLogs.value = []
       total.value = 0
     }
   } catch (e) {
-    console.error('历史记录加载异常:', e)
+    console.error('[History] 加载异常:', e)
     historyLogs.value = []
     total.value = 0
   } finally {
@@ -525,9 +620,10 @@ const loadStats = async () => {
     const json = await res.json()
     if (json.success) {
       stats.value = json.data || { today_count: 0, by_level: {}, by_service: {}, total: 0 }
+      console.log('[Stats] 统计数据:', stats.value)
     }
   } catch (e) {
-    console.error('统计信息加载失败:', e)
+    console.error('[Stats] 加载失败:', e)
   }
 }
 
@@ -537,19 +633,27 @@ const loadStats = async () => {
 const handleDownload = (type) => {
   showDownloadMenu.value = false
   const downloadUrl = `${API_BASE}/download?type=${type}&t=${Date.now()}`
+  console.log('[Download] 下载:', downloadUrl)
   window.open(downloadUrl, '_blank')
 }
 
 /**
  * 模式切换逻辑处理
  */
-const handleModeChange = () => {
-  if (mode.value === 'live') {
+const switchMode = (newMode) => {
+  if (mode.value === newMode) return
+  
+  mode.value = newMode
+  console.log('[Mode] 切换到:', newMode)
+  
+  if (newMode === 'live') {
     historyLogs.value = []
     logs.value = []
+    cleanupSSE()
     initSSE()
   } else {
-    if (es) es.close()
+    cleanupSSE()
+    logs.value = []
     page.value = 1
     loadHistory()
   }
@@ -559,9 +663,12 @@ const handleModeChange = () => {
  * 过滤器变更触发器
  */
 const onFilterChange = () => {
+  console.log('[Filter] 过滤器变更:', filters)
   page.value = 1
+  
   if (mode.value === 'live') {
     logs.value = []
+    cleanupSSE()
     initSSE()
   } else {
     loadHistory()
@@ -573,9 +680,10 @@ const onFilterChange = () => {
  * 手动刷新
  */
 const handleRefresh = () => {
+  console.log('[Refresh] 手动刷新')
   if (mode.value === 'live') {
     logs.value = []
-    if (es) es.close()
+    cleanupSSE()
     initSSE()
   } else {
     loadHistory()
@@ -587,6 +695,7 @@ const handleRefresh = () => {
  * 清除本地显示
  */
 const clearLogs = () => {
+  console.log('[Clear] 清空日志')
   if (mode.value === 'live') {
     logs.value = []
   } else {
@@ -615,6 +724,8 @@ const scrollToBottom = () => {
 
 // ================= 生命周期控制 =================
 onMounted(() => {
+  console.log('[Lifecycle] 组件挂载')
+  
   // 初始化时先加载统计信息
   loadStats()
   
@@ -637,8 +748,9 @@ onMounted(() => {
   window.addEventListener('click', handleClickOutside)
   
   onUnmounted(() => {
+    console.log('[Lifecycle] 组件卸载')
     window.removeEventListener('click', handleClickOutside)
-    if (es) es.close()
+    cleanupSSE()
     if (statsTimer) clearInterval(statsTimer)
   })
 })
@@ -694,18 +806,5 @@ mark {
   color: white; 
   border-radius: 2px; 
   padding: 0 2px;
-}
-
-/* 确保内容区域不会超出边界 */
-main {
-  position: relative;
-  contain: layout style paint;
-}
-
-/* 防止滚动容器溢出 */
-.scrollbar-custom {
-  position: relative;
-  width: 100%;
-  height: 100%;
 }
 </style>
