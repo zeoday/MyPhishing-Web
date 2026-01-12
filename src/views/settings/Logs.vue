@@ -476,13 +476,13 @@ const initSSE = () => {
   if (filters.level !== 'all') params.append('level', filters.level)
   
   const url = `${API_BASE}/stream?${params.toString()}`
-  console.log('[SSE] 连接到:', url)
+  console.log('[SSE] 🔌 连接到:', url)
   
   es = new EventSource(url)
   
   // 连接成功
-  es.onopen = () => {
-    console.log('[SSE] 连接成功')
+  es.addEventListener('open', () => {
+    console.log('[SSE] ✅ 连接成功')
     sseConnected.value = true
     
     // 重置心跳计时器
@@ -491,10 +491,10 @@ const initSSE = () => {
       console.warn('[SSE] 30秒未收到心跳，标记为断开')
       sseConnected.value = false
     }, 30000)
-  }
+  })
   
-  // 接收消息
-  es.onmessage = (e) => {
+  // 接收消息 - 修复版
+  es.addEventListener('message', (e) => {
     // 重置心跳计时器
     if (heartbeatTimer) clearTimeout(heartbeatTimer)
     heartbeatTimer = setTimeout(() => {
@@ -502,21 +502,38 @@ const initSSE = () => {
       sseConnected.value = false
     }, 30000)
     
-    // 心跳包
-    if (e.data.includes('heartbeat') || e.data.trim() === '') {
-      console.log('[SSE] 收到心跳')
+    // 打印原始数据用于调试
+    console.log('[SSE] 📩 收到原始数据:', e.data)
+    
+    // 跳过空数据和注释（心跳包通常是注释格式 ": heartbeat"）
+    if (!e.data || e.data.trim() === '' || e.data.startsWith(':')) {
+      console.log('[SSE] 💓 跳过心跳或空数据')
       return
     }
     
     // 解析日志数据
     try {
       const data = JSON.parse(e.data)
+      
+      // 检查是否是错误消息
       if (data.error) {
-        console.error('[SSE] 服务器错误:', data.error)
+        console.error('[SSE] ❌ 服务器错误:', data.error)
         return
       }
       
-      console.log('[SSE] 收到日志:', data)
+      // 验证必需字段
+      if (!data.timestamp || !data.level || !data.message) {
+        console.warn('[SSE] ⚠️ 数据格式不完整:', data)
+        return
+      }
+      
+      console.log('[SSE] ✅ 成功解析日志:', {
+        service: data.service,
+        level: data.level,
+        message: data.message.substring(0, 50) + '...'
+      })
+      
+      // 添加到日志列表
       logs.value.push(data)
       
       // 保持缓冲区大小
@@ -529,24 +546,25 @@ const initSSE = () => {
         nextTick(scrollToBottom)
       }
     } catch (err) {
-      console.error('[SSE] JSON 解析错误:', err, e.data)
+      console.error('[SSE] ❌ JSON 解析失败:', err)
+      console.error('[SSE] 问题数据:', e.data)
     }
-  }
+  })
 
   // 连接错误
-  es.onerror = (err) => {
-    console.error('[SSE] 连接错误:', err)
+  es.addEventListener('error', (err) => {
+    console.error('[SSE] ❌ 连接错误:', err)
     sseConnected.value = false
     cleanupSSE()
     
     // 自动重连（5秒后）
     reconnectTimer = setTimeout(() => {
       if (mode.value === 'live') {
-        console.log('[SSE] 尝试重新连接...')
+        console.log('[SSE] 🔄 尝试重新连接...')
         initSSE()
       }
     }, 5000)
-  }
+  })
 }
 
 /**
