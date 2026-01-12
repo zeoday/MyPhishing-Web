@@ -1,6 +1,7 @@
 <template>
   <div class="flex flex-col h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-200 overflow-hidden font-sans">
-    <header class="h-16 border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-between px-6 shrink-0 relative z-[1000]">
+    <!-- 头部固定层 - 最高优先级 -->
+    <header class="relative z-[100] h-16 border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
       <div class="flex items-center gap-8">
         <div class="flex items-center gap-3">
           <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -39,19 +40,21 @@
           </button>
         </div>
 
-        <div class="relative dropdown-container">
+        <div class="relative" ref="dropdownContainer">
           <button
             @click.stop="toggleDownloadMenu"
             class="flex items-center gap-2 px-4 py-1.5 bg-slate-100 hover:bg-white text-slate-900 rounded-lg text-xs font-bold transition-all active:scale-95"
           >
-            <Download class="w-4 h-4" />
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
             导出数据
           </button>
           
           <transition name="dropdown">
             <div 
               v-if="showDownloadMenu" 
-              class="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[1100] backdrop-blur-xl"
+              class="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-[110] backdrop-blur-xl"
             >
               <div class="px-4 py-2 border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-widest">选择导出类型</div>
               <button
@@ -61,7 +64,9 @@
                 class="w-full px-4 py-3 text-left text-slate-300 hover:bg-blue-600 hover:text-white transition-colors text-sm flex items-center justify-between group"
               >
                 <span class="flex items-center gap-3">
-                  <Document class="w-4 h-4 text-slate-500 group-hover:text-white" />
+                  <svg class="w-4 h-4 text-slate-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                   {{ type.toUpperCase() }} 日志文件
                 </span>
                 <span class="text-[10px] opacity-50">.LOG</span>
@@ -72,7 +77,8 @@
       </div>
     </header>
 
-    <div class="bg-slate-900/50 backdrop-blur-md p-4 border-b border-slate-800/50 flex flex-wrap items-center gap-4 px-6 relative z-[900]">
+    <!-- 过滤器栏 - 次高优先级 -->
+    <div class="relative z-[90] bg-slate-900/50 backdrop-blur-md p-4 border-b border-slate-800/50 flex flex-wrap items-center gap-4 px-6">
       <div class="flex flex-col gap-1">
         <span class="text-[10px] font-bold text-slate-500 uppercase ml-1">所属服务</span>
         <select 
@@ -104,7 +110,9 @@
       <div class="flex flex-col gap-1 flex-1 max-w-sm">
         <span class="text-[10px] font-bold text-slate-500 uppercase ml-1">关键词过滤</span>
         <div class="relative">
-          <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
           <input 
             v-model="filters.keyword" 
             @keyup.enter="onFilterChange" 
@@ -143,7 +151,9 @@
           class="p-2 text-slate-400 hover:text-blue-400 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition-all"
           title="重新加载数据"
         >
-          <Refresh class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+          <svg :class="['w-4 h-4', { 'animate-spin': loading }]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
         <button 
           @click="clearLogs" 
@@ -154,7 +164,9 @@
       </div>
     </div>
 
-    <main class="flex-1 bg-[#05070a] relative overflow-hidden flex flex-col">
+    <!-- 主内容区域 - 受限滚动 -->
+    <main class="relative flex-1 bg-[#05070a] overflow-hidden">
+      <!-- 加载提示 -->
       <div v-if="loading" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-[2px]">
         <div class="flex flex-col items-center gap-4">
           <div class="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
@@ -162,20 +174,21 @@
         </div>
       </div>
 
-      <RecycleScroller
-        ref="scrollerRef"
-        class="flex-1 p-4 font-mono text-[13px] scrollbar-custom"
-        :items="displayLogs"
-        :item-size="50" 
-        key-field="id"
-        v-slot="{ item }"
+      <!-- 日志列表滚动容器 -->
+      <div 
+        ref="scrollContainer"
+        class="absolute inset-0 overflow-y-auto p-4 font-mono text-[13px] scrollbar-custom"
       >
         <div 
+          v-for="(item, index) in displayLogs" 
+          :key="item.id || `log-${index}`"
           class="group flex flex-col md:flex-row gap-2 md:gap-4 px-4 py-3 mb-2 rounded-lg border-l-4 transition-all duration-200"
           :class="levelStyle(item.level)"
         >
           <div class="flex items-center gap-2 shrink-0 md:w-48">
-            <Clock class="w-3.5 h-3.5 opacity-30" />
+            <svg class="w-3.5 h-3.5 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             <span class="text-slate-500 font-bold tabular-nums">{{ formatTimestamp(item.timestamp) }}</span>
           </div>
 
@@ -198,43 +211,89 @@
             ></div>
           </div>
         </div>
-      </RecycleScroller>
+      </div>
       
-      <div v-if="!loading && displayLogs.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-800">
+      <!-- 空状态提示 -->
+      <div v-if="!loading && displayLogs.length === 0" class="absolute inset-0 flex flex-col items-center justify-center text-slate-800 pointer-events-none">
         <div class="relative mb-6">
-          <Document class="w-24 h-24 opacity-[0.03]" />
-          <Search class="w-8 h-8 absolute bottom-0 right-0 opacity-10 animate-bounce" />
+          <svg class="w-24 h-24 opacity-[0.03]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <svg class="w-8 h-8 absolute bottom-0 right-0 opacity-10 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
         <p class="text-sm font-bold uppercase tracking-[0.2em] opacity-40">No Log Records Found</p>
         <p class="text-xs opacity-20 mt-2">请尝试调整过滤器设置或检查系统推送服务</p>
+        <button 
+          @click="handleRefresh"
+          class="mt-6 px-6 py-2 bg-blue-600/10 border border-blue-600/20 text-blue-400 rounded-lg text-xs font-bold hover:bg-blue-600/20 transition-all pointer-events-auto"
+        >
+          重新加载数据
+        </button>
       </div>
     </main>
 
-    <footer v-if="mode === 'history'" class="h-14 border-t border-slate-800/50 bg-slate-900/95 flex items-center px-8 justify-between shrink-0">
+    <!-- 底部分页 -->
+    <footer v-if="mode === 'history'" class="relative z-[80] h-14 border-t border-slate-800/50 bg-slate-900/95 flex items-center px-8 justify-between shrink-0">
       <div class="flex items-center gap-4">
         <div class="text-[11px] text-slate-500 uppercase font-bold tracking-widest">
           查询结果: <span class="text-blue-400 ml-1">{{ total }}</span>
         </div>
       </div>
       
-      <el-pagination 
-        v-model:current-page="page" 
-        :page-size="pageSize" 
-        :total="total" 
-        layout="prev, pager, next, jumper" 
-        small 
-        background 
-        @current-change="loadHistory" 
-      />
+      <div class="flex items-center gap-2">
+        <button
+          @click="page > 1 && (page--, loadHistory())"
+          :disabled="page <= 1"
+          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700"
+        >
+          上一页
+        </button>
+        
+        <div class="flex items-center gap-1">
+          <button
+            v-for="p in visiblePages"
+            :key="p"
+            @click="page = p; loadHistory()"
+            :class="['px-3 py-1 rounded text-xs border transition-all', p === page ? 'bg-blue-600 text-white border-blue-600' : 'bg-transparent text-slate-400 border-slate-700 hover:bg-slate-800']"
+          >
+            {{ p }}
+          </button>
+        </div>
+
+        <button
+          @click="page < totalPages && (page++, loadHistory())"
+          :disabled="page >= totalPages"
+          class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700"
+        >
+          下一页
+        </button>
+
+        <div class="flex items-center gap-2 ml-4">
+          <span class="text-xs text-slate-500">跳转至</span>
+          <input 
+            type="number" 
+            v-model.number="jumpPage"
+            @keyup.enter="handleJumpPage"
+            min="1"
+            :max="totalPages"
+            class="w-16 px-2 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-center"
+          />
+          <button
+            @click="handleJumpPage"
+            class="px-3 py-1 bg-slate-800 border border-slate-700 rounded text-xs hover:bg-slate-700"
+          >
+            GO
+          </button>
+        </div>
+      </div>
     </footer>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import { Download, Refresh, Loading, Document, Search, ArrowDown, Clock } from '@element-plus/icons-vue'
-import { RecycleScroller } from 'vue-virtual-scroller'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 
 /**
  * 后端 API 基础路径
@@ -251,13 +310,15 @@ const autoScroll = ref(true)
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(100)
-const scrollerRef = ref(null)
+const scrollContainer = ref(null)
+const dropdownContainer = ref(null)
+const jumpPage = ref(1)
 
 // 下拉菜单控制
 const showDownloadMenu = ref(false)
-const downloadTypes = ['all', 'error', 'info', 'warning']
+const downloadTypes = ['celery', 'gateway', 'flask']
 
-// 过滤器状态：核心修复 - 初始化时间字段
+// 过滤器状态
 const filters = reactive({
   service: 'all',
   level: 'all',
@@ -276,8 +337,44 @@ const displayLogs = computed(() => {
   const source = mode.value === 'live' ? logs.value : historyLogs.value
   return source.map((item, idx) => ({ 
     ...item, 
-    id: item.id || `${mode.value}-${idx}-${item.timestamp}` 
+    id: item.id || `${mode.value}-${idx}-${item.timestamp || Date.now()}` 
   }))
+})
+
+/**
+ * 计算总页数
+ */
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value) || 1)
+
+/**
+ * 计算可见页码
+ */
+const visiblePages = computed(() => {
+  const current = page.value
+  const total = totalPages.value
+  const pages = []
+  
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+  
+  return pages.filter(p => p !== '...')
 })
 
 /**
@@ -309,9 +406,14 @@ const badgeStyle = (lvl) => {
  */
 const formatTimestamp = (ts) => {
   if (!ts) return '--:--:--'
-  const d = new Date(ts)
-  const pad = (n) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${d.getMilliseconds().toString().padStart(3, '0')}`
+  try {
+    const d = new Date(ts)
+    if (isNaN(d.getTime())) return ts
+    const pad = (n) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${d.getMilliseconds().toString().padStart(3, '0')}`
+  } catch (e) {
+    return ts
+  }
 }
 
 /**
@@ -346,47 +448,69 @@ const initSSE = () => {
     if (e.data.includes('heartbeat')) return
     try {
       const data = JSON.parse(e.data)
+      if (data.error) {
+        console.error('SSE Error:', data.error)
+        return
+      }
       logs.value.push(data)
-      // 保持缓冲区大小在 2000 条左右，防止内存溢出
       if (logs.value.length > 2500) logs.value.splice(0, 500)
       if (autoScroll.value) nextTick(scrollToBottom)
     } catch (err) {
-      console.error('SSE JSON 解析错误:', err)
+      console.error('SSE JSON 解析错误:', err, e.data)
     }
   }
 
-  es.onerror = () => {
-    console.warn('SSE 连接断开，尝试自动重连...')
+  es.onerror = (err) => {
+    console.warn('SSE 连接错误:', err)
   }
 }
 
 /**
- * 加载历史数据：修复核心逻辑 - 增加时间格式化
+ * 加载历史数据
  */
 const loadHistory = async () => {
   loading.value = true
   try {
     const p = new URLSearchParams({
       page: page.value,
-      page_size: pageSize.value,
-      service: filters.service,
-      level: filters.level,
-      keyword: filters.keyword
+      page_size: pageSize.value
     })
 
-    // 格式化时间为 ISO 格式供后端读取
-    if (filters.startTime) p.append('start_time', new Date(filters.startTime).toISOString())
-    if (filters.endTime) p.append('end_time', new Date(filters.endTime).toISOString())
+    if (filters.service !== 'all') p.append('service', filters.service)
+    if (filters.level !== 'all') p.append('level', filters.level)
+    if (filters.keyword) p.append('keyword', filters.keyword)
+    
+    if (filters.startTime) {
+      try {
+        p.append('start_time', new Date(filters.startTime).toISOString())
+      } catch (e) {
+        console.error('开始时间格式错误:', e)
+      }
+    }
+    if (filters.endTime) {
+      try {
+        p.append('end_time', new Date(filters.endTime).toISOString())
+      } catch (e) {
+        console.error('结束时间格式错误:', e)
+      }
+    }
 
     const res = await fetch(`${API_BASE}/history?${p.toString()}`)
     const json = await res.json()
     
     if (json.success) {
-      historyLogs.value = json.data.logs
-      total.value = json.data.total
+      historyLogs.value = json.data.logs || []
+      total.value = json.data.total || 0
+      jumpPage.value = page.value
+    } else {
+      console.error('历史记录加载失败:', json.error)
+      historyLogs.value = []
+      total.value = 0
     }
   } catch (e) {
-    console.error('历史记录加载失败:', e)
+    console.error('历史记录加载异常:', e)
+    historyLogs.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -399,12 +523,16 @@ const loadStats = async () => {
   try {
     const res = await fetch(`${API_BASE}/stats`)
     const json = await res.json()
-    if (json.success) stats.value = json.data
-  } catch (e) {}
+    if (json.success) {
+      stats.value = json.data || { today_count: 0, by_level: {}, by_service: {}, total: 0 }
+    }
+  } catch (e) {
+    console.error('统计信息加载失败:', e)
+  }
 }
 
 /**
- * 处理文件下载：通过 window.open 避免权限拦截
+ * 处理文件下载
  */
 const handleDownload = (type) => {
   showDownloadMenu.value = false
@@ -418,6 +546,7 @@ const handleDownload = (type) => {
 const handleModeChange = () => {
   if (mode.value === 'live') {
     historyLogs.value = []
+    logs.value = []
     initSSE()
   } else {
     if (es) es.close()
@@ -443,37 +572,65 @@ const onFilterChange = () => {
 /**
  * 手动刷新
  */
-const handleRefresh = () => onFilterChange()
+const handleRefresh = () => {
+  if (mode.value === 'live') {
+    logs.value = []
+    if (es) es.close()
+    initSSE()
+  } else {
+    loadHistory()
+  }
+  loadStats()
+}
 
 /**
  * 清除本地显示
  */
 const clearLogs = () => {
-  if (mode.value === 'live') logs.value = []
-  else historyLogs.value = []
+  if (mode.value === 'live') {
+    logs.value = []
+  } else {
+    historyLogs.value = []
+  }
 }
 
 /**
- * 滚动逻辑
+ * 跳转到指定页
+ */
+const handleJumpPage = () => {
+  if (jumpPage.value >= 1 && jumpPage.value <= totalPages.value) {
+    page.value = jumpPage.value
+    loadHistory()
+  }
+}
+
+/**
+ * 滚动到底部
  */
 const scrollToBottom = () => {
-  if (scrollerRef.value) {
-    const el = scrollerRef.value.$el
-    el.scrollTop = el.scrollHeight
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
   }
 }
 
 // ================= 生命周期控制 =================
 onMounted(() => {
-  initSSE()
+  // 初始化时先加载统计信息
   loadStats()
+  
+  // 根据模式初始化数据
+  if (mode.value === 'live') {
+    initSSE()
+  } else {
+    loadHistory()
+  }
   
   // 轮询统计数据（每30秒）
   statsTimer = setInterval(loadStats, 30000)
   
   // 全局点击监听，关闭下拉菜单
   const handleClickOutside = (e) => {
-    if (!e.target.closest('.dropdown-container')) {
+    if (dropdownContainer.value && !dropdownContainer.value.contains(e.target)) {
       showDownloadMenu.value = false
     }
   }
@@ -486,24 +643,44 @@ onMounted(() => {
   })
 })
 
-// 监听模式，切换时自动重置滚动条
+// 监听模式切换，重置滚动条
 watch(mode, () => {
   nextTick(() => {
-    if (scrollerRef.value) scrollerRef.value.$el.scrollTop = 0
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = 0
+    }
   })
 })
 </script>
 
 <style scoped>
 /* 自定义滚动条样式 */
-.scrollbar-custom::-webkit-scrollbar { width: 6px; height: 6px; }
-.scrollbar-custom::-webkit-scrollbar-track { background: #05070a; }
-.scrollbar-custom::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; border: 1px solid #0f172a; }
-.scrollbar-custom::-webkit-scrollbar-thumb:hover { background: #334155; }
+.scrollbar-custom::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
+}
+.scrollbar-custom::-webkit-scrollbar-track { 
+  background: #05070a; 
+}
+.scrollbar-custom::-webkit-scrollbar-thumb { 
+  background: #1e293b; 
+  border-radius: 10px; 
+  border: 1px solid #0f172a; 
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover { 
+  background: #334155; 
+}
 
-/* 菜单动画 */
-.dropdown-enter-active, .dropdown-leave-active { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-.dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+/* 下拉菜单动画 */
+.dropdown-enter-active, 
+.dropdown-leave-active { 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+.dropdown-enter-from, 
+.dropdown-leave-to { 
+  opacity: 0; 
+  transform: translateY(-10px) scale(0.95); 
+}
 
 /* 日历选择器图标变亮 */
 .inv-calendar-picker::-webkit-calendar-picker-indicator {
@@ -511,26 +688,24 @@ watch(mode, () => {
   cursor: pointer;
 }
 
-/* 覆盖 Element Plus 分页背景 */
-:deep(.el-pagination.is-background .el-pager li) {
-  background-color: transparent !important;
-  color: #64748b !important;
-  border: 1px solid #1e293b !important;
-}
-:deep(.el-pagination.is-background .el-pager li.is-active) {
-  background-color: #2563eb !important;
-  color: white !important;
-  border-color: #2563eb !important;
-}
-:deep(.el-pagination .el-input__wrapper) {
-  background-color: #0f172a !important;
-  box-shadow: none !important;
-  border: 1px solid #1e293b !important;
-}
-:deep(.el-pagination .el-input__inner) {
-  color: #e2e8f0 !important;
+/* 强制高亮背景 */
+mark { 
+  background-color: #3b82f6; 
+  color: white; 
+  border-radius: 2px; 
+  padding: 0 2px;
 }
 
-/* 强制高亮背景 */
-mark { background-color: #3b82f6; color: white; border-radius: 2px; }
+/* 确保内容区域不会超出边界 */
+main {
+  position: relative;
+  contain: layout style paint;
+}
+
+/* 防止滚动容器溢出 */
+.scrollbar-custom {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 </style>
