@@ -9,12 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.6.0",
     "chart.js": "^4.5.1",
     "echarts": "^6.0.0",
+    "element-plus": "^2.13.0",
     "lucide-vue-next": "^0.460.0",
     "vue": "^3.4.0",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.0",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

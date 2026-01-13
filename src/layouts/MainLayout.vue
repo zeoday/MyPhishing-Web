@@ -164,6 +164,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, X, Shield, Search, Bell, User, BarChart3, Mail, Database, Brain, FileText, Settings, AlertCircle, Key, ChevronDown } from 'lucide-vue-next'
+import { FileSearch } from 'lucide-vue-next'
 
 const route = useRoute()
 const sidebarOpen = ref(false)
@@ -185,7 +186,8 @@ const navigationItems = [
     color: 'text-amber-400',
     children: [
       { id: 'alert', path: '/settings/alert', icon: AlertCircle, label: '告警拦截配置' },
-      { id: 'license', path: '/settings/license', icon: Key, label: '授权管理' }
+      { id: 'license', path: '/settings/license', icon: Key, label: '授权管理' },
+      { id: 'logs', path: '/settings/logs', icon: FileSearch, label: '日志分析' }
     ]
   }
 ]
